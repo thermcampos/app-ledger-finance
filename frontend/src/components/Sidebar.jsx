@@ -106,7 +106,7 @@ export default function Sidebar({ isOpen, onClose }) {
         </button>
         <div className="text-faint mt-2 text-center" style={{ fontSize: 10.5 }}>
           <a
-            href="https://lightroasted.vps-kinghost.net/thermcampos/ledger-finance/src/branch/main/CHANGELOG.md"
+            href="https://github.com/thermcampos/app-ledger-finance/releases"
             target="_blank"
             rel="noopener noreferrer"
             className="release-link"

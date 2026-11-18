@@ -16,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       has_changes: ${{ steps.check-changes.outputs.has_changes }}
+      backend_tag: ${{ steps.resolve-tags.outputs.backend_tag }}
+      frontend_tag: ${{ steps.resolve-tags.outputs.frontend_tag }}
     environment: production
     permissions:
       contents: read
@@ -113,3 +115,26 @@ jobs:
           DOPPLER_TOKEN: ${{ secrets.DOPPLER_AT_SECRETS }}
         run: doppler run --config prd -- timeout 1m terraform apply tfplan
 
+
+  # One GitHub Release per deployed commit, created only after a real apply (no-op plans don't
+  # release). Notes = images now live + PRs merged since the previous release.
+  release:
+    needs: terraform-plan
+    if: ${{ needs.terraform-plan.outputs.has_changes == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Create or update the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # workflow_run: the commit CD built, not whatever main points at now.
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          BACKEND_TAG: ${{ needs.terraform-plan.outputs.backend_tag }}
+          FRONTEND_TAG: ${{ needs.terraform-plan.outputs.frontend_tag }}
+        run: bash .github/scripts/release.sh "$RELEASE_SHA" "$BACKEND_TAG" "$FRONTEND_TAG"
