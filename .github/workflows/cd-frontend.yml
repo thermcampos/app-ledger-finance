@@ -10,6 +10,7 @@ on:
       - 'frontend/*.json'
       - 'frontend/index.html'
       - 'frontend/Dockerfile'
+      - 'frontend/nginx/**'
       - '.github/workflows/cd-frontend.yml'
 
 env:

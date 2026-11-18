@@ -1,6 +1,7 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import { BUILD_LABEL, fetchReleaseVersion, releaseUrl } from '../utils/releaseVersion';
 
 const links = [
   { to: '/', label: 'Overview', icon: 'bi-grid-1x2', end: true },
@@ -19,6 +20,18 @@ export default function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
   const navRef = useRef(null);
   const [indicatorStyle, setIndicatorStyle] = useState({ opacity: 0 });
+  const [releaseVersion, setReleaseVersion] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    fetchReleaseVersion().then((version) => {
+      if (active) setReleaseVersion(version);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const initials = (user?.displayName || user?.email || '?')
     .split(' ')
     .map((s) => s[0])
@@ -106,12 +119,12 @@ export default function Sidebar({ isOpen, onClose }) {
         </button>
         <div className="text-faint mt-2 text-center" style={{ fontSize: 10.5 }}>
           <a
-            href="https://github.com/thermcampos/app-ledger-finance/releases"
+            href={releaseUrl(releaseVersion)}
             target="_blank"
             rel="noopener noreferrer"
             className="release-link"
           >
-              {import.meta.env.VITE_BUILD_NUMBER || 'nightly'}
+              {releaseVersion || BUILD_LABEL}
           </a>
         </div>
       </div>

@@ -93,6 +93,13 @@ variable "frontend_image" {
   default = "docker.io/thermcampos/ledger-frontend:latest"
 }
 
+# Release tag (vYYYY.MM.DD.N) the frontend serves at /version.json; set by deploy.yml from
+# .github/scripts/release-tag.sh. Empty = the Sidebar falls back to the build number.
+variable "release_version" {
+  type    = string
+  default = ""
+}
+
 resource "kubernetes_namespace_v1" "ledger_finance" {
   metadata {
     name = "ledger-finance"
@@ -339,6 +346,10 @@ resource "kubernetes_deployment_v1" "ledger_finance_frontend" {
           image = var.frontend_image
           name  = "frontend"
           port { container_port = 80 }
+          env {
+            name  = "RELEASE_VERSION"
+            value = var.release_version
+          }
           resources {
             limits   = { memory = "128Mi", cpu = "150m" }
             requests = { memory = "128Mi", cpu = "100m" }
