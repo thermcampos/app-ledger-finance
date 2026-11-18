@@ -104,7 +104,7 @@ Matt Pocock's engineering skills are vendored under `.agents/skills/` and versio
 
 ### Issue tracker
 
-Issues are tracked as GitHub issues on `thermcampos/ledger-finance`, managed via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Issues are tracked as GitHub issues on `thermcampos/app-ledger-finance`, managed via the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
