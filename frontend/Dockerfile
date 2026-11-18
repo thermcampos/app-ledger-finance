@@ -24,26 +24,12 @@ RUN npm i --ignore-scripts --no-update-notifier --omit=dev && \
 # Production stage
 FROM nginx:alpine
 
-# Copy custom nginx config (optional - creates a basic one if not exists)
-RUN echo 'server { \
-    listen 80; \
-    server_name localhost; \
-    root /usr/share/nginx/html; \
-    index index.html; \
-    location / { \
-        try_files $uri $uri/ /index.html; \
-        add_header Cache-Control "no-cache" always; \
-        add_header X-Frame-Options "SAMEORIGIN" always; \
-        add_header X-Content-Type-Options "nosniff" always; \
-        add_header X-XSS-Protection "1; mode=block" always; \
-    } \
-    location /assets/ { \
-        add_header Cache-Control "public, max-age=31536000, immutable" always; \
-        add_header X-Frame-Options "SAMEORIGIN" always; \
-        add_header X-Content-Type-Options "nosniff" always; \
-        add_header X-XSS-Protection "1; mode=block" always; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+# nginx config as a template: the image's entrypoint renders /etc/nginx/templates/*.template into
+# /etc/nginx/conf.d/ at start, substituting only RELEASE_VERSION (the deployed release tag, set by
+# Terraform; served at /version.json). Empty by default so the container starts anywhere.
+ENV RELEASE_VERSION=""
+ENV NGINX_ENVSUBST_FILTER="^RELEASE_VERSION$"
+COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
 
 # Copy built assets from build stage
 COPY --from=build /app/dist /usr/share/nginx/html

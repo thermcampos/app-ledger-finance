@@ -1,0 +1,32 @@
+# Rendered at container start by the nginx image's envsubst step into /etc/nginx/conf.d/default.conf.
+# Only ${RELEASE_VERSION} is substituted (NGINX_ENVSUBST_FILTER in the Dockerfile); nginx's own
+# variables like $uri are left alone.
+server {
+    listen 80;
+    server_name localhost;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-cache" always;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+    }
+
+    location /assets/ {
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+    }
+
+    # The deployed release tag (set per deploy by Terraform), read by the Sidebar.
+    location = /version.json {
+        default_type application/json;
+        add_header Cache-Control "no-store" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        return 200 '{"version":"${RELEASE_VERSION}"}';
+    }
+}

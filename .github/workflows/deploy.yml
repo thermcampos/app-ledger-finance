@@ -18,6 +18,7 @@ jobs:
       has_changes: ${{ steps.check-changes.outputs.has_changes }}
       backend_tag: ${{ steps.resolve-tags.outputs.backend_tag }}
       frontend_tag: ${{ steps.resolve-tags.outputs.frontend_tag }}
+      release_tag: ${{ steps.release-tag.outputs.tag }}
     environment: production
     permissions:
       contents: read
@@ -61,6 +62,18 @@ jobs:
           echo "backend_tag=$BACKEND_TAG" >> "$GITHUB_OUTPUT"
           echo "frontend_tag=$FRONTEND_TAG" >> "$GITHUB_OUTPUT"
 
+      # Decided before the apply so the frontend pod serves it at /version.json; the release job
+      # then creates the GitHub Release under this same tag.
+      - name: Decide release tag
+        id: release-tag
+        env:
+          # workflow_run: the commit CD built, not whatever main points at now.
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          TAG=$(bash .github/scripts/release-tag.sh "$RELEASE_SHA")
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Release tag: $TAG"
+
       - name: Terraform Fmt -check -diff
         working-directory: terraform
         run: terraform fmt -check -diff
@@ -82,6 +95,7 @@ jobs:
           DOPPLER_TOKEN: ${{ secrets.DOPPLER_AT_SECRETS }}
           BACKEND_IMAGE: ghcr.io/thermcampos/ledger-finance/backend:${{ steps.resolve-tags.outputs.backend_tag }}
           FRONTEND_IMAGE: ghcr.io/thermcampos/ledger-finance/frontend:${{ steps.resolve-tags.outputs.frontend_tag }}
+          RELEASE_VERSION: ${{ steps.release-tag.outputs.tag }}
         run: |
           doppler run --config prd -- bash -c '
             TF_VAR_db_user="$TF_VAR_DB_USER" \
@@ -96,6 +110,7 @@ jobs:
             TF_VAR_totp_encryption_key="$TOTP_ENCRYPTION_KEY" \
             TF_VAR_backend_image="$BACKEND_IMAGE" \
             TF_VAR_frontend_image="$FRONTEND_IMAGE" \
+            TF_VAR_release_version="$RELEASE_VERSION" \
             timeout 1m terraform plan -input=false -out=tfplan
           '
           terraform show -json tfplan > tfplan.json
@@ -135,6 +150,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # workflow_run: the commit CD built, not whatever main points at now.
           RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          RELEASE_TAG: ${{ needs.terraform-plan.outputs.release_tag }}
           BACKEND_TAG: ${{ needs.terraform-plan.outputs.backend_tag }}
           FRONTEND_TAG: ${{ needs.terraform-plan.outputs.frontend_tag }}
-        run: bash .github/scripts/release.sh "$RELEASE_SHA" "$BACKEND_TAG" "$FRONTEND_TAG"
+        run: bash .github/scripts/release.sh "$RELEASE_SHA" "$RELEASE_TAG" "$BACKEND_TAG" "$FRONTEND_TAG"
