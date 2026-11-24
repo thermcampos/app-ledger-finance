@@ -33,7 +33,7 @@ tasks:
       '
 
   quality-check-frontend:
-    desc: Frontend quality gate, same as PR CI (scripts/check-frontend.sh) - lint, build, test, contrast
+    desc: Frontend quality gate, same as PR CI (scripts/check-frontend.sh) - lint, typecheck, build, test, contrast
     cmd: bash scripts/check-frontend.sh
 
   smoke-test-backend:

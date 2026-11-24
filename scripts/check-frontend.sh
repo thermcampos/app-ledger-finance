@@ -1,5 +1,5 @@
 #!/bin/bash
-# Frontend quality gate: install, lint, build, unit tests, light/dark palette contrast.
+# Frontend quality gate: install, lint, typecheck, build, unit tests, light/dark palette contrast.
 
 CURRENT_DIR=$(pwd)
 
@@ -14,28 +14,35 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Running checks..."
-echo "1/4 - Lint started..."
+echo "1/5 - Lint started..."
 npm run lint
 if [ $? -ne 0 ]; then
   echo "Issues when running lint. Please review.."
   exit 1
 fi
 
-echo "2/4 - Build started..."
+echo "2/5 - Typecheck started..."
+npm run typecheck
+if [ $? -ne 0 ]; then
+  echo "Issues when running typecheck. Please review.."
+  exit 1
+fi
+
+echo "3/5 - Build started..."
 npm run build
 if [ $? -ne 0 ]; then
   echo "Issues when running build. Please review.."
   exit 1
 fi
 
-echo "3/4 - Tests started..."
+echo "4/5 - Tests started..."
 npm run test
 if [ $? -ne 0 ]; then
   echo "Issues when running test. Please review.."
   exit 1
 fi
 
-echo "4/4 - Contrast check started..."
+echo "5/5 - Contrast check started..."
 npm run check:contrast
 if [ $? -ne 0 ]; then
   echo "Issues when running contrast check. Please review.."
